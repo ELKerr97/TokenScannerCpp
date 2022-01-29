@@ -32,6 +32,10 @@ public:
         return out.str();
     }
 
+    TokenType getType() const{
+        return type;
+    }
+
 string typeName(TokenType type) const {
 
     switch (type) {

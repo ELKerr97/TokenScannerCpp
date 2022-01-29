@@ -1,8 +1,29 @@
 #include <iostream>
 #include "Token.h"
 #include "Scanner.h"
+#include "Parser.h"
+#include <vector>
+
 
 int main(int argc, char** argv) {
+
+    // SETUP FOR LAB 2
+
+    vector<Token> tokens = {
+        Token(ID,"Ned",2),
+        Token(LEFT_PAREN,"(",2),
+        Token(RIGHT_PAREN,")",2),
+    };
+
+    Parser p = Parser(tokens);
+    cout << p.tokenType() << endl;
+    p.advanceToken();
+    cout << p.tokenType() << endl;
+    p.advanceToken();
+    cout << p.tokenType() << endl;
+    p.throwError();
+
+/*      SETUP FOR PROJECT 1
 
     // get input file
     ifstream file(argv[1]);
@@ -24,4 +45,5 @@ int main(int argc, char** argv) {
 
     cout << "Total Tokens = " << t.size() << endl;
 
+*/
 }
