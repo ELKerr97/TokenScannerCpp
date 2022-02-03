@@ -2,6 +2,10 @@
 // Created by Ethan L. Kerr on 1/24/22.
 //
 //#pragma //once?
+
+#ifndef UNTITLED_TOKEN_H
+#define UNTITLED_TOKEN_H
+
 #include <string>
 #include <sstream>
 
@@ -27,13 +31,18 @@ public:
 
     string toString() const {
 
-        stringstream out; // displays strings to the output
+        stringstream out; // Display strings
         out << "(" << typeName(type) << "," << "\"" <<  value << "\"," << line << ")";
         return out.str();
     }
 
     TokenType getType() const{
-        return type;
+        return type; // TODO: this returns the index of the enum. Should it return the name?
+
+    }
+
+    string getValue() const {
+        return value;
     }
 
 string typeName(TokenType type) const {
@@ -82,5 +91,5 @@ string typeName(TokenType type) const {
 }
 
 };
-
+#endif
 

@@ -9,22 +9,38 @@ int main(int argc, char** argv) {
 
     // SETUP FOR LAB 2
 
+    // get input file
+    ifstream file(argv[1]);
+
+    ostringstream os;
+    os << file.rdbuf();
+    string fileString = os.str();
+
+    // Create Scanner object
+    Scanner s = Scanner(fileString);
+
+    // Return a vector (array) of Token objects
+    vector<Token> t = s.Run();
+
     vector<Token> tokens = {
-        Token(ID,"Ned",2),
-        Token(LEFT_PAREN,"(",2),
-        Token(RIGHT_PAREN,")",2),
+            Token(ID,"Ned",2),
+            Token(LEFT_PAREN,"(",2),
+            Token(STRING,"\'Ted\'",2),
+            Token(COMMA,",",2),
+            Token(STRING,"\'Zed\'",2),
+            Token(COMMA,",",2),
+            Token(STRING,"\'Zed\'",2),
+            Token(COMMA,",",2),
+            Token(STRING,"\'Zed\'",2),
+            Token(RIGHT_PAREN,")",2),
     };
 
-    Parser p = Parser(tokens);
-    cout << p.tokenType() << endl;
-    p.advanceToken();
-    cout << p.tokenType() << endl;
-    p.advanceToken();
-    cout << p.tokenType() << endl;
-    p.throwError();
+    Parser p = Parser(t);
+    p.parseRule();
 
-/*      SETUP FOR PROJECT 1
 
+     // SETUP FOR PROJECT 1
+/*
     // get input file
     ifstream file(argv[1]);
 
@@ -44,6 +60,6 @@ int main(int argc, char** argv) {
     }
 
     cout << "Total Tokens = " << t.size() << endl;
-
 */
+
 }
