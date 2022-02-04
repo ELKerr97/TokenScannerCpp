@@ -27,6 +27,7 @@ public:
     vector<Predicate> facts;
     vector<Rule> rules;
     vector<Predicate> queries;
+    vector<string> domains;
 
     // Methods
     DatalogProgram() {}
@@ -34,32 +35,44 @@ public:
     string printDatalog() {
         string datalog;
 
+        datalog += "Success!\n";
+
         // Print out schemes
-        datalog += ("Schemes(" + to_string(schemes.size()) + "):\n\t");
+        datalog += ("Schemes(" + to_string(schemes.size()) + "):\n");
         for(int i = 0; i < schemes.size() ; i ++ ){
-            datalog += schemes[i].predToString();
+            datalog += "\t" + schemes[i].predToString() + "\n";
         }
 
         // Print out facts
-        datalog += ("Facts(" + to_string(facts.size()) + "):\n\t");
+        datalog += ("Facts(" + to_string(facts.size()) + "):\n");
         for(int i = 0; i < facts.size() ; i ++ ){
-            datalog += facts[i].predToString();
+            datalog += "\t" + facts[i].predToString() + "\n";
         }
 
         // Print out rules
-        datalog += ("Rules(" + to_string(rules.size()) + "):\n\t");
+        datalog += ("Rules(" + to_string(rules.size()) + "):\n");
         for(int i = 0; i < rules.size() ; i ++ ){
-            datalog += rules[i].ruleToString();
+            datalog += "\t" + rules[i].ruleToString() + "\n";
         }
 
         // Print out queries
-        datalog += ("Queries(" + to_string(queries.size()) + "):\n\t");
+        datalog += ("Queries(" + to_string(queries.size()) + "):\n");
         for(int i = 0; i < queries.size() ; i ++ ){
-            datalog += queries[i].predToString();
+            datalog += "\t" + queries[i].predToString() + "?\n";
         }
 
         // Print out domains
-        datalog += ("Domain("); // TODO: determine which parameters are strings
+        datalog += ("Domain(" + to_string(domains.size()) + "):\n");
+        for(int i = 0; i < domains.size() ; i ++ ){
+            if(i < domains.size() - 1){
+                datalog += "\t" + domains[i] + "\n";
+            } else {
+                datalog += "\t" + domains[i];
+            }
+
+        }
+
+        return datalog;
     }
 
 
@@ -77,6 +90,10 @@ public:
 
     void addQuery(Predicate& query){
         queries.push_back(query);
+    }
+
+    void addDomain(const string& domain){
+        domains.push_back(domain);
     }
 };
 

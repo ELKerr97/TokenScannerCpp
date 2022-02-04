@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
     };
 
     Parser p = Parser(t);
-    p.parseRule();
+    p.Run();
 
 
      // SETUP FOR PROJECT 1

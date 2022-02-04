@@ -20,25 +20,30 @@ private:
     unsigned int tokenIndex = 0;
     vector<Token> tokens;
     DatalogProgram datalogProgram;
+    bool printDatalogProgram = true;
 
     string match(TokenType t) {
         string tokenValue = tokens.at(tokenIndex).getValue();
-        cout << "match: " << tokens.at(tokenIndex).getValue() << endl;
+        // cout << "match: " << tokens.at(tokenIndex).getValue() << endl;
         if (tokenType() == t){
 
             // If token type matches, advance token index to look at next token and return tokenValue
-            tokenIndex ++ ;
+            if (tokenIndex < tokens.size() - 1){
+                tokenIndex ++ ;
+            }
             return tokenValue;
 
-        } else { // TODO: Stop parser when an error is thrown
+        } else {
             // Throw an error if the token type does not match
-            throwError();
-            return "";
+            cout << "error match" << endl;
+            printDatalogProgram = false;
+            return "error match";
         }
     }
 
-    void throwError() {
-        cout << "Failure!\n\t" << tokens.at(tokenIndex).toString() << endl;
+    string throwError() {
+        string errorThrown = "Failure!\n\t" + tokens.at(tokenIndex).toString();
+        return errorThrown;
     }
 
 public:
@@ -48,11 +53,73 @@ public:
         return tokens.at(tokenIndex).getType();
     }
 
-    void createDatalog() { // TODO: Create datalog, check for errors, print datalog to console
-        if(tokenType() == SCHEMES) { // Schemes:
+    void Run() {
+        // Create datalog structure
+        createDatalog();
+        // If no errors, print Datalog Program
+        if(printDatalogProgram) {
+
+            // Print the datalog data structure
+            cout << datalogProgram.printDatalog() << endl;
+        } else {
+            // If there is an error, print only that to the console
+            cout << throwError() << endl;
+        }
+    }
+
+    void createDatalog() {
+        if (tokenType() == SCHEMES) { // Schemes:
+
             match(SCHEMES); // Schemes
             match(COLON); // :
 
+            // Add Schemes
+            while (tokens.at(tokenIndex).getType() != FACTS) {
+                Predicate scheme = parseScheme();
+                if(!printDatalogProgram){return;}
+                datalogProgram.addScheme(scheme);
+            }
+
+            match(FACTS);
+            match(COLON);
+
+            // Add Facts
+            while (tokens.at(tokenIndex).getType() != RULES) {
+                Predicate fact = parseFact();
+                if(!printDatalogProgram){return;}
+                datalogProgram.addFact(fact);
+            }
+
+            match(RULES);
+            match(COLON);
+
+            // Add Rules
+            while (tokens.at(tokenIndex).getType() != QUERIES) {
+                Rule rule = parseRule();
+                if(!printDatalogProgram){return;}
+                datalogProgram.addRule(rule);
+            }
+
+            match(QUERIES);
+            match(COLON);
+
+            // Add Queries
+            while (tokens.at(tokenIndex).getType() != EOF_TYPE) {
+                Predicate query = parseQuery();
+                if(!printDatalogProgram){return;}
+                datalogProgram.addQuery(query);
+            }
+
+            match(EOF_TYPE);
+
+            // Handle extra tokens at the end of file
+            if (!tokens.empty()){
+                match(EOF_TYPE);
+            }
+
+        } else {
+            printDatalogProgram = false;
+            return;
         }
     }
 
@@ -71,6 +138,7 @@ public:
         if (tokenType() == COMMA) {
             match(COMMA);
             predicate.addParam(match(STRING));
+            datalogProgram.addDomain(tokens.at(tokenIndex - 1).getValue());
             stringList(predicate);
         } else {
             // lambda
@@ -88,7 +156,8 @@ public:
             match(RIGHT_PAREN); // )
             return p;
         } else {
-            Predicate pError("Error");
+            Predicate pError("Scheme Error");
+            printDatalogProgram = false;
             throwError();
             return pError;
         }
@@ -99,13 +168,14 @@ public:
             Predicate p(match(ID));
             match((LEFT_PAREN));
             p.addParam(match(STRING));
+            datalogProgram.addDomain(tokens.at(tokenIndex - 1).getValue());
             stringList(p);
             match(RIGHT_PAREN);
             match(PERIOD);
-            cout << p.predToString() << endl;
             return p;
         } else {
-            Predicate pError("Error");
+            Predicate pError("Fact Error");
+            printDatalogProgram = false;
             throwError();
             return pError;
         }
@@ -119,7 +189,9 @@ public:
             match(Q_MARK);
             return p;
         } else {
-            Predicate pError("Error");
+            Predicate pError("Query Error");
+            printDatalogProgram = false;
+            throwError();
             return pError;
         }
     }
@@ -145,7 +217,7 @@ public:
         } else {
 
             // Won't reach this... I don't think...
-            Predicate pError("error");
+            Predicate pError("Predicate Error");
             return pError;
         }
     }
@@ -164,18 +236,18 @@ public:
     Rule parseRule() {
         if(tokenType() == ID){
             Predicate headP = createPredicate();
-            cout << headP.predToString() << endl;
             Rule r(headP); // headPredicate
             match(COLON_DASH); // :-
             Predicate p = createPredicate();
             r.addPredicate(p);
             predicateList(r);
             match(PERIOD);
-            cout << r.ruleToString() << endl;
             return r;
         } else {
-            Predicate pError("Error");
+            Predicate pError("Rule Error");
             Rule rError(pError);
+            printDatalogProgram = false;
+            throwError();
             return rError;
         }
     }
@@ -187,6 +259,7 @@ public:
                 p.addParam(match(ID));
             } else if (tokenType() == STRING){
                 p.addParam(match(STRING));
+                datalogProgram.addDomain(match(STRING));
             }
             paramList(p);
         } else {
@@ -195,29 +268,6 @@ public:
         }
     }
 
-
-
-/*
-    void ruleList() {
-        if (tokenType() == COMMA){
-            match(COMMA);
-
-        }
-    }
-
-    void rule() {
-        if (tokenType() == ID){
-            match(ID);
-            match(LEFT_PAREN);
-            match(ID);
-            idList();
-            match(RIGHT_PAREN);
-            match(COLON_DASH);
-
-
-        }
-    }
-*/
 
 };
 

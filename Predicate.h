@@ -37,7 +37,7 @@ public:
             if (i != parameters.size() - 1){
                 predString += paramToString(i) + ",";
             } else {
-                predString += paramToString(i) + ")\n";
+                predString += paramToString(i) + ")";
             }
         }
         return predString;

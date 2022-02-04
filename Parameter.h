@@ -19,7 +19,6 @@ public:
     TokenType tokenType;
 
     Parameter(const string &name) : name(name){}
-    // TODO: Add methods to get parameter list
 
     string printName() {
         return name;
