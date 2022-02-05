@@ -22,18 +22,19 @@ int main(int argc, char** argv) {
     // Return a vector (array) of Token objects
     vector<Token> t = s.Run();
 
-    vector<Token> tokens = {
-            Token(ID,"Ned",2),
-            Token(LEFT_PAREN,"(",2),
-            Token(STRING,"\'Ted\'",2),
-            Token(COMMA,",",2),
-            Token(STRING,"\'Zed\'",2),
-            Token(COMMA,",",2),
-            Token(STRING,"\'Zed\'",2),
-            Token(COMMA,",",2),
-            Token(STRING,"\'Zed\'",2),
-            Token(RIGHT_PAREN,")",2),
-    };
+
+//    vector<Token> tokens = {
+//            Token(ID,"Ned",2),
+//            Token(LEFT_PAREN,"(",2),
+//            Token(STRING,"\'Ted\'",2),
+//            Token(COMMA,",",2),
+//            Token(STRING,"\'Zed\'",2),
+//            Token(COMMA,",",2),
+//            Token(STRING,"\'Zed\'",2),
+//            Token(COMMA,",",2),
+//            Token(STRING,"\'Zed\'",2),
+//            Token(RIGHT_PAREN,")",2),
+//    };
 
     Parser p = Parser(t);
     p.Run();

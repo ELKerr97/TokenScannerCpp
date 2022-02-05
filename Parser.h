@@ -35,7 +35,6 @@ private:
 
         } else {
             // Throw an error if the token type does not match
-            cout << "match error, expected " << t << endl;
             printDatalogProgram = false;
             return "";
         }
@@ -134,10 +133,9 @@ public:
             // Add Queries
             while (tokens.at(tokenIndex).getType() != EOF_TYPE) {
                 Predicate query = parseQuery();
-                cout << query.predToString() << endl;
-                cout << printDatalogProgram << endl;
                 if(!printDatalogProgram){return;}
                 datalogProgram.addQuery(query);
+
             }
 
             match(EOF_TYPE);
@@ -148,7 +146,6 @@ public:
             }
 
         } else {
-            cout << "create error" << endl;
             printDatalogProgram = false;
             return;
         }
@@ -289,7 +286,7 @@ public:
                 p.addParam(match(ID));
             } else if (tokenType() == STRING){
                 p.addParam(match(STRING));
-                datalogProgram.addDomain(match(STRING));
+                datalogProgram.addDomain(tokens.at(tokenIndex - 1).getValue());
             }
             paramList(p);
         } else {

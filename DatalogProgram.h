@@ -39,39 +39,11 @@ public:
         string datalog;
 
         datalog += "Success!\n";
-
-        // Print out schemes
-        datalog += ("Schemes(" + to_string(schemes.size()) + "):\n");
-        for(int i = 0; i < schemes.size() ; i ++ ){
-            datalog += "  " + schemes[i].predToString() + "\n";
-        }
-
-        // Print out facts
-        datalog += ("Facts(" + to_string(facts.size()) + "):\n");
-        for(int i = 0; i < facts.size() ; i ++ ){
-            datalog += "  " + facts[i].predToString() + ".\n";
-        }
-
-        // Print out rules
-        datalog += ("Rules(" + to_string(rules.size()) + "):\n");
-        for(int i = 0; i < rules.size() ; i ++ ){
-            datalog += "  " + rules[i].ruleToString() + "\n";
-        }
-
-        // Print out queries
-        datalog += ("Queries(" + to_string(queries.size()) + "):\n");
-        for(int i = 0; i < queries.size() ; i ++ ){
-            datalog += "  " + queries[i].predToString() + "?\n";
-        }
-
-        set<string>::iterator itr;
-
-        // Print out domains // TODO: learn how to iterate over set lol
-        datalog += ("Domain(" + to_string(domains.size()) + "):\n");
-        for(itr = domains.begin(); itr != domains.end() ; itr ++ ){
-            datalog += "  " + *itr + "\n";
-
-        }
+        datalog +=printSchemes();
+        datalog +=printFacts();
+        datalog +=printRules();
+        datalog +=printQueries();
+        datalog += printDomains();
 
         return datalog;
     }
@@ -95,6 +67,54 @@ public:
 
     void addDomain(const string& domain){
         domains.insert(domain);
+    }
+
+    string printQueries() {
+        string datalog = ("Queries(" + to_string(queries.size()) + "):\n");
+        for(int i = 0; i < queries.size() ; i ++ ){
+            datalog += "  " + queries[i].predToString() + "?\n";
+        }
+        return datalog;
+    }
+
+    string printSchemes() {
+        // Print out schemes
+        string datalog = ("Schemes(" + to_string(schemes.size()) + "):\n");
+        for(int i = 0; i < schemes.size() ; i ++ ){
+            datalog += "  " + schemes[i].predToString() + "\n";
+        }
+        return datalog;
+    }
+
+    string printFacts() {
+        // Print out facts
+        string datalog = ("Facts(" + to_string(facts.size()) + "):\n");
+        for(int i = 0; i < facts.size() ; i ++ ){
+            datalog += "  " + facts[i].predToString() + ".\n";
+        }
+        return datalog;
+    }
+
+    string printRules() {
+        // Print out rules
+        string datalog = ("Rules(" + to_string(rules.size()) + "):\n");
+        for(int i = 0; i < rules.size() ; i ++ ){
+            datalog += "  " + rules[i].ruleToString() + "\n";
+        }
+        return datalog;
+    }
+
+    string printDomains() {
+
+        set<string>::iterator itr;
+
+        // Print out domains // TODO: learn how to iterate over set lol
+        string datalog = ("Domain(" + to_string(domains.size()) + "):\n");
+        for(itr = domains.begin(); itr != domains.end() ; itr ++ ){
+            datalog += "  " + *itr + "\n";
+
+        }
+        return datalog;
     }
 };
 
