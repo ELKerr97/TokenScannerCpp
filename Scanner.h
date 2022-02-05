@@ -157,7 +157,8 @@ public:
                         else if (!commentAutomaton.IsDefined()) { type = UNDEFINED; }
                         size = commentAutomaton.GetNumRead();
                         value = commentAutomaton.GetInputRead();
-                        tokens.push_back(Token(type, value, line));
+                        // Ignore comments in Datalog Parser
+                        // tokens.push_back(Token(type, value, line));
                         break;
                     case 'S':
                         keyWordAutomaton.ReadInput(input);

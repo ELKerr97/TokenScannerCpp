@@ -9,6 +9,8 @@
 #include "Rule.h"
 #include <vector>
 #include <string>
+#include <set>
+
 
 using namespace std;
 
@@ -27,7 +29,8 @@ public:
     vector<Predicate> facts;
     vector<Rule> rules;
     vector<Predicate> queries;
-    vector<string> domains;
+    set<string> domains;
+
 
     // Methods
     DatalogProgram() {}
@@ -40,35 +43,33 @@ public:
         // Print out schemes
         datalog += ("Schemes(" + to_string(schemes.size()) + "):\n");
         for(int i = 0; i < schemes.size() ; i ++ ){
-            datalog += "\t" + schemes[i].predToString() + "\n";
+            datalog += "  " + schemes[i].predToString() + "\n";
         }
 
         // Print out facts
         datalog += ("Facts(" + to_string(facts.size()) + "):\n");
         for(int i = 0; i < facts.size() ; i ++ ){
-            datalog += "\t" + facts[i].predToString() + "\n";
+            datalog += "  " + facts[i].predToString() + ".\n";
         }
 
         // Print out rules
         datalog += ("Rules(" + to_string(rules.size()) + "):\n");
         for(int i = 0; i < rules.size() ; i ++ ){
-            datalog += "\t" + rules[i].ruleToString() + "\n";
+            datalog += "  " + rules[i].ruleToString() + "\n";
         }
 
         // Print out queries
         datalog += ("Queries(" + to_string(queries.size()) + "):\n");
         for(int i = 0; i < queries.size() ; i ++ ){
-            datalog += "\t" + queries[i].predToString() + "?\n";
+            datalog += "  " + queries[i].predToString() + "?\n";
         }
 
-        // Print out domains
+        set<string>::iterator itr;
+
+        // Print out domains // TODO: learn how to iterate over set lol
         datalog += ("Domain(" + to_string(domains.size()) + "):\n");
-        for(int i = 0; i < domains.size() ; i ++ ){
-            if(i < domains.size() - 1){
-                datalog += "\t" + domains[i] + "\n";
-            } else {
-                datalog += "\t" + domains[i];
-            }
+        for(itr = domains.begin(); itr != domains.end() ; itr ++ ){
+            datalog += "  " + *itr + "\n";
 
         }
 
@@ -93,7 +94,7 @@ public:
     }
 
     void addDomain(const string& domain){
-        domains.push_back(domain);
+        domains.insert(domain);
     }
 };
 

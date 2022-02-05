@@ -35,14 +35,14 @@ private:
 
         } else {
             // Throw an error if the token type does not match
-            cout << "error match" << endl;
+            cout << "match error, expected " << t << endl;
             printDatalogProgram = false;
-            return "error match";
+            return "";
         }
     }
 
     string throwError() {
-        string errorThrown = "Failure!\n\t" + tokens.at(tokenIndex).toString();
+        string errorThrown = "Failure!\n  " + tokens.at(tokenIndex).toString();
         return errorThrown;
     }
 
@@ -67,11 +67,18 @@ public:
         }
     }
 
-    void createDatalog() {
+    void createDatalog() { // TODO: Throw error for empty lists
         if (tokenType() == SCHEMES) { // Schemes:
 
             match(SCHEMES); // Schemes
             match(COLON); // :
+
+            // Check for empty Scheme
+            if(tokenType() == FACTS){
+                throwError();
+                printDatalogProgram = false;
+                return;
+            }
 
             // Add Schemes
             while (tokens.at(tokenIndex).getType() != FACTS) {
@@ -83,6 +90,13 @@ public:
             match(FACTS);
             match(COLON);
 
+            // Check for empty Fact
+            if(tokenType() == RULES){
+                throwError();
+                printDatalogProgram = false;
+                return;
+            }
+
             // Add Facts
             while (tokens.at(tokenIndex).getType() != RULES) {
                 Predicate fact = parseFact();
@@ -92,6 +106,13 @@ public:
 
             match(RULES);
             match(COLON);
+
+            // Check for empty Rules
+            if(tokenType() == QUERIES){
+                throwError();
+                printDatalogProgram = false;
+                return;
+            }
 
             // Add Rules
             while (tokens.at(tokenIndex).getType() != QUERIES) {
@@ -103,9 +124,18 @@ public:
             match(QUERIES);
             match(COLON);
 
+            // Check for empty Query
+            if(tokenType() == EOF_TYPE){
+                throwError();
+                printDatalogProgram = false;
+                return;
+            }
+
             // Add Queries
             while (tokens.at(tokenIndex).getType() != EOF_TYPE) {
                 Predicate query = parseQuery();
+                cout << query.predToString() << endl;
+                cout << printDatalogProgram << endl;
                 if(!printDatalogProgram){return;}
                 datalogProgram.addQuery(query);
             }
@@ -118,6 +148,7 @@ public:
             }
 
         } else {
+            cout << "create error" << endl;
             printDatalogProgram = false;
             return;
         }
@@ -181,7 +212,7 @@ public:
         }
     }
 
-    Predicate parseQuery() { // TODO: check for predicate. Not sure what to do for this quite yet.
+    Predicate parseQuery() {
         // Check if predicate starts with valid ID
         if(tokenType() == ID){
             // Check if it's a valid predicate
@@ -215,7 +246,6 @@ public:
             // Return Predicate
             return p;
         } else {
-
             // Won't reach this... I don't think...
             Predicate pError("Predicate Error");
             return pError;
