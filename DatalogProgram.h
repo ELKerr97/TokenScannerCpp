@@ -71,7 +71,7 @@ public:
 
     string printQueries() {
         string datalog = ("Queries(" + to_string(queries.size()) + "):\n");
-        for(int i = 0; i < queries.size() ; i ++ ){
+        for(long unsigned int i = 0; i < queries.size() ; i ++ ){
             datalog += "  " + queries[i].predToString() + "?\n";
         }
         return datalog;
@@ -80,7 +80,7 @@ public:
     string printSchemes() {
         // Print out schemes
         string datalog = ("Schemes(" + to_string(schemes.size()) + "):\n");
-        for(int i = 0; i < schemes.size() ; i ++ ){
+        for(long unsigned int i = 0; i < schemes.size() ; i ++ ){
             datalog += "  " + schemes[i].predToString() + "\n";
         }
         return datalog;
@@ -89,7 +89,7 @@ public:
     string printFacts() {
         // Print out facts
         string datalog = ("Facts(" + to_string(facts.size()) + "):\n");
-        for(int i = 0; i < facts.size() ; i ++ ){
+        for(long unsigned int i = 0; i < facts.size() ; i ++ ){
             datalog += "  " + facts[i].predToString() + ".\n";
         }
         return datalog;
@@ -98,7 +98,7 @@ public:
     string printRules() {
         // Print out rules
         string datalog = ("Rules(" + to_string(rules.size()) + "):\n");
-        for(int i = 0; i < rules.size() ; i ++ ){
+        for(long unsigned int i = 0; i < rules.size() ; i ++ ){
             datalog += "  " + rules[i].ruleToString() + "\n";
         }
         return datalog;

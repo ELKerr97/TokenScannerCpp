@@ -71,6 +71,7 @@ public:
 
             match(SCHEMES); // Schemes
             match(COLON); // :
+            if(!printDatalogProgram){return;}
 
             // Check for empty Scheme
             if(tokenType() == FACTS){
@@ -88,13 +89,8 @@ public:
 
             match(FACTS);
             match(COLON);
+            if(!printDatalogProgram){return;}
 
-            // Check for empty Fact
-            if(tokenType() == RULES){
-                throwError();
-                printDatalogProgram = false;
-                return;
-            }
 
             // Add Facts
             while (tokens.at(tokenIndex).getType() != RULES) {
@@ -105,13 +101,7 @@ public:
 
             match(RULES);
             match(COLON);
-
-            // Check for empty Rules
-            if(tokenType() == QUERIES){
-                throwError();
-                printDatalogProgram = false;
-                return;
-            }
+            if(!printDatalogProgram){return;}
 
             // Add Rules
             while (tokens.at(tokenIndex).getType() != QUERIES) {
@@ -122,6 +112,7 @@ public:
 
             match(QUERIES);
             match(COLON);
+            if(!printDatalogProgram){return;}
 
             // Check for empty Query
             if(tokenType() == EOF_TYPE){
@@ -180,6 +171,7 @@ public:
             Predicate p(match(ID)); // snap
             match(LEFT_PAREN); // (
             p.addParam(match(ID)); // S
+            if(!printDatalogProgram){return p;}
             idList(p); // ,N,A,P
             match(RIGHT_PAREN); // )
             return p;
@@ -191,11 +183,12 @@ public:
         }
     }
 
-    Predicate parseFact() { // TODO: return a Predicate rather than void
+    Predicate parseFact() {
         if (tokenType() == ID){
             Predicate p(match(ID));
             match((LEFT_PAREN));
             p.addParam(match(STRING));
+            if(!printDatalogProgram){return p;}
             datalogProgram.addDomain(tokens.at(tokenIndex - 1).getValue());
             stringList(p);
             match(RIGHT_PAREN);
@@ -234,6 +227,10 @@ public:
                 p.addParam(match(ID));
             } else if (tokenType() == STRING){
                 p.addParam(match(STRING));
+            } else {
+                // If empty params list, will throw an error due to the )
+                match(ID);
+                return p;
             }
 
             // Add more parameters
@@ -265,6 +262,7 @@ public:
             Predicate headP = createPredicate();
             Rule r(headP); // headPredicate
             match(COLON_DASH); // :-
+            if(!printDatalogProgram){return r;}
             Predicate p = createPredicate();
             r.addPredicate(p);
             predicateList(r);
@@ -286,7 +284,7 @@ public:
                 p.addParam(match(ID));
             } else if (tokenType() == STRING){
                 p.addParam(match(STRING));
-                datalogProgram.addDomain(tokens.at(tokenIndex - 1).getValue());
+                //datalogProgram.addDomain(tokens.at(tokenIndex - 1).getValue());
             }
             paramList(p);
         } else {

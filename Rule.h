@@ -28,7 +28,7 @@ public:
     string ruleToString() {
         string ruleString;
         ruleString += (headPredicate.predToString() + " :- ");
-        for(int i = 0; i < predicateList.size() ; i++){
+        for(long unsigned int i = 0; i < predicateList.size() ; i++){
             if (i != predicateList.size() - 1){
                 ruleString += predicateList[i].predToString() + ",";
             } else {

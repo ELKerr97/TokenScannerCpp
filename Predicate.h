@@ -33,7 +33,7 @@ public:
     string predToString() {
         string predString;
         predString += (name + "(");
-        for(int i = 0; i < parameters.size(); i ++){
+        for(long unsigned int i = 0; i < parameters.size(); i ++){
             if (i != parameters.size() - 1){
                 predString += paramToString(i) + ",";
             } else {
