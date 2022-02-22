@@ -16,7 +16,6 @@ private:
 
 public:
     string name;
-    TokenType tokenType;
 
     Parameter(const string &name) : name(name){}
 
