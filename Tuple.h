@@ -12,6 +12,11 @@
 
 using namespace std;
 
+/**
+ * Tuple class stores Tuples of String type.
+ *
+ * Note: Use a <set> of Tuples in database. This will eliminate duplicates and give the right order to the output.
+ */
 class Tuple : public vector<string> {
 
 public:

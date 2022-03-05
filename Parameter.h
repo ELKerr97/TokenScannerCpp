@@ -23,6 +23,13 @@ public:
         return name;
     }
 
+    bool isConstant() {
+        if(!isalpha(name.at(0))){
+            return true;
+        } else
+        return false;
+    }
+
 
 
 };

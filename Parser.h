@@ -52,17 +52,22 @@ public:
         return tokens.at(tokenIndex).getType();
     }
 
-    void Run() {
+    /**
+     * Run returns a DatalogProgram object that contains schemes, facts, rules and queries
+     * @return
+     */
+    DatalogProgram Run() {
         // Create datalog structure
         createDatalog();
-        // If no errors, print Datalog Program
+        // If no errors, return Datalog Program
         if(printDatalogProgram) {
 
-            // Print the datalog data structure
-            cout << datalogProgram.printDatalog() << endl;
+            // Return the datalog data structure
+            return datalogProgram;
         } else {
             // If there is an error, print only that to the console
             cout << throwError() << endl;
+            return datalogProgram;
         }
     }
 

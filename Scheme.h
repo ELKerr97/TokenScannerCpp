@@ -9,7 +9,11 @@
 
 using namespace std;
 
-
+/**
+ * Scheme class will hold the names of the Relation
+ *
+ * Each Scheme defines the name of a Relation in the database
+ */
 class Scheme : public vector<string> {
 
 public:

@@ -33,14 +33,28 @@ public:
     string predToString() {
         string predString;
         predString += (name + "(");
-        for(long unsigned int i = 0; i < parameters.size(); i ++){
-            if (i != parameters.size() - 1){
+        for (long unsigned int i = 0; i < parameters.size(); i++) {
+            if (i != parameters.size() - 1) {
                 predString += paramToString(i) + ",";
             } else {
                 predString += paramToString(i) + ")";
             }
         }
         return predString;
+    }
+
+    string getName() {
+        return name;
+    }
+
+    vector<int> repeatParameters(string& parameter) {
+        vector<int> indicesOfRepeat;
+        for (long unsigned int i = 0; i < parameters.size(); i++) {
+            if(parameter == parameters[i].name) {
+                indicesOfRepeat.push_back(i);
+            }
+        }
+        return indicesOfRepeat;
     }
 
 };
