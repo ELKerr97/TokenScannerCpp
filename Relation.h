@@ -54,9 +54,11 @@ public:
 
     string relationToString() const {
         stringstream out;
-        for (auto& tuple : tuples)
+        for (auto& tuple : tuples) {
 
-            out << tuple.schemeTupleToString(scheme) << endl;
+            out << "  " << tuple.schemeTupleToString(scheme) << endl;
+
+        }
 
         return out.str();
     }

@@ -104,10 +104,9 @@ public:
         // Iterate through each query
         for(auto & query : datalogProgram.queries){
             cout << query.predToString() << "? ";
+
             // Iterate through each Relation
             for(auto relation : relations) {
-
-                //cout << relation.relationNameToString() << endl;
 
                 // Check if query and relation match
                 if (query.getName() == relation.relationNameToString()) {
@@ -143,12 +142,11 @@ public:
                                         query.repeatParameters(
                                                 query.parameters[qParamIndex].name));
 
-                                //cout << newVariable.getVariableName() << endl;
-
                                 // Add new variable to variables to be used when projecting the relation
                                 variables.push_back(newVariable);
 
                                 if(newVariable.indices.size() > 1) {
+
                                     // Multiple indices. Assuming the same variable can only show up twice.
                                     relation = relation.selectMultipleIndexes(newVariable.indices);
                                 }
@@ -159,56 +157,44 @@ public:
 
                     }
 
+                    // First, check if the relation has any tuples. If not, the query evaluates to no.
+                    if(relation.getTupleNum() != 0) {
 
-
-                }
-
-                //cout << relation.relationToString() << endl;
-
-                // TODO: Project
-                // First, check if the relation has any tuples. If not, the query evaluates to no.
-                if(relation.getTupleNum() != 0) {
-
-                    // TODO: Rename
-                    vector<string> newSchemeNames;
-                    for(auto & variable : variables) {
-                        newSchemeNames.push_back(variable.name);
-                    }
-
-                    relation.rename(newSchemeNames);
-
-                    // If no variables given in query, simply print yes followed by the number of tuples
-                    if(variables.empty()) {
-
-                        cout << "Yes(" << relation.getTupleNum() << ")" << endl;
-
-                    } else {
-                        vector<int> projectIndices;
-                        //cout << relation.relationToString() << endl;
-
-                        // Iterate through each variable and do a project and collect indices of those variables
+                        // TODO: Rename
+                        vector<string> newSchemeNames;
                         for(auto & variable : variables) {
+                            newSchemeNames.push_back(variable.name);
+                        }
 
-                            projectIndices.push_back(variable.indices[0]);
+                        relation.rename(newSchemeNames);
+
+                        // If no variables given in query, simply print yes followed by the number of tuples
+                        if(variables.empty()) {
+
+                            cout << "Yes(" << relation.getTupleNum() << ")" << endl;
+
+                        } else {
+                            vector<int> projectIndices;
+
+                            // Iterate through each variable and do a project and collect indices of those variables
+                            for(auto & variable : variables) {
+
+                                projectIndices.push_back(variable.indices[0]);
+
+                            }
+                            Relation projectedRelation = relation.project(projectIndices);
+                            cout << "Yes(" << relation.getTupleNum() << ")" << endl;
+                            cout << projectedRelation.relationToString();
+                            projectIndices.clear();
 
                         }
-                        Relation projectedRelation = relation.project(projectIndices);
-                        cout << "Yes(" << relation.getTupleNum() << ")" << endl;
-                        cout << projectedRelation.relationToString() << endl;
-                        projectIndices.clear();
+                    } else {
+                        cout << "No" << endl;
                     }
-                } else {
-                    cout << "No" << endl;
+
                 }
 
-                // Iterate through each relation
-
-
-
-
             }
-
-
 
             variables.clear();
         }
