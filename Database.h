@@ -35,8 +35,11 @@ public:
         // Add Tuples to Relations
         addTuplesToRelations();
 
+        // Evaluate Rules
+        evaluateRules();
+
         // Evaluate Queries
-        evaluateQueries();
+        //evaluateQueries();
 
     }
 
@@ -99,6 +102,134 @@ public:
 
     }
 
+    /**
+     * evaluateRules() evaluates rules in database.
+     * This is repeated until there are no changes to the tuples in the relations.
+     */
+    void evaluateRules() {
+
+        // Will run until there are no changes
+        bool changes = true;
+
+        while (changes) {
+
+            // set to false at beginning of loop, will switch to true when a tuple is added to a relation
+            changes = false;
+
+            // Go through each rule
+            for(auto & rule : datalogProgram.rules){
+
+                // Head predicate
+                //cout << rule.headPredicate.predToString() << endl;
+
+                vector<Relation> rightSideRules;
+
+                // Evaluate the right side of the rule
+                for(auto & rightRule : rule.predicateList){
+
+
+                    // Iterate through each Relation
+                    for(auto & relation : relations){
+
+                        // Check if rule and relation match
+                        if(rightRule.name == relation.relationNameToString()){
+
+                            // Iterate through each parameter in rule.
+                            // All parameters will be variables, so no need to check for constants.
+                            for(long unsigned int rParamIndex = 0; rParamIndex < rightRule.parameters.size() ; rParamIndex ++){
+
+                                bool repeatVar = false;
+
+                                // Check if the variable has already been accounted for in the rule
+                                for (auto &variable: variables) {
+                                    if (rightRule.parameters[rParamIndex].name ==
+                                        variable.getVariableName()) {
+                                        repeatVar = true;
+                                    }
+                                }
+
+                                // If first time variable shows up in rule, add new variable
+                                if (!repeatVar) {
+
+                                    Variable newVariable = Variable(
+                                            rightRule.parameters[rParamIndex].name,
+                                            rightRule.repeatParameters(
+                                                    rightRule.parameters[rParamIndex].name));
+
+                                    // Add new variable to variables to be used when projecting the relation
+                                    variables.push_back(newVariable);
+
+                                    // Make sure there are variables to add to relation
+                                    if(!newVariable.indices.empty()) {
+
+                                        // Create the new relation with
+                                        relation = relation.selectMultipleIndexes(newVariable.indices);
+                                    }
+
+                                }
+                            }
+
+                            // Rename
+                            vector<string> newSchemeNames;
+                            for(auto & variable : variables) {
+                                newSchemeNames.push_back(variable.name);
+                            }
+
+                            relation.rename(newSchemeNames);
+
+                            // Project
+                            vector<int> projectIndices;
+
+                            // Iterate through each variable and do a project and collect indices of those variables
+                            for(auto & variable : variables) {
+
+                                projectIndices.push_back(variable.indices[0]);
+
+                            }
+                            Relation projectedRelation = relation.project(projectIndices);
+                            //cout << projectedRelation.relationToString();
+                            projectIndices.clear();
+
+                            rightSideRules.push_back(projectedRelation);
+                        }
+                    }
+
+                    variables.clear();
+
+                }
+
+                // Join Rules
+
+                // If two or more predicates on right-hand side, join intermediate results
+                if(rightSideRules.size() > 1) {
+
+                    // Start with the first relation
+                    Relation singleRelation = rightSideRules[0];
+
+                    // Iterate through each right-hand side rule
+                    for(unsigned int i = 0; i < rightSideRules.size()-1; i ++){
+
+                        // Join each relation together
+                        singleRelation = singleRelation.join(rightSideRules[i + 1]);
+
+                    }
+
+                    //cout << singleRelation.relationToString() << endl;
+
+                }
+
+                // Project Rules
+
+                // Rename Rules
+
+                // Union
+
+                // Reset for next rule
+                rightSideRules.clear();
+            }
+        }
+    }
+
     void evaluateQueries() {
 
         // Iterate through each query
@@ -147,7 +278,7 @@ public:
 
                                 if(newVariable.indices.size() > 1) {
 
-                                    // Multiple indices. Assuming the same variable can only show up twice.
+                                    // Multiple indices.
                                     relation = relation.selectMultipleIndexes(newVariable.indices);
                                 }
 
@@ -174,6 +305,7 @@ public:
                             cout << "Yes(" << relation.getTupleNum() << ")" << endl;
 
                         } else {
+
                             vector<int> projectIndices;
 
                             // Iterate through each variable and do a project and collect indices of those variables

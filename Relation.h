@@ -34,6 +34,140 @@ public:
 
     Relation(const string& name, const Scheme& scheme) : name(name), scheme(scheme) { }
 
+    Tuple joinTuples(const Tuple& leftTuple, const Tuple& rightTuple){
+        // Join two tuples
+
+        vector<string> values;
+
+        // Add all the values from the left tuple first
+        for(auto & leftValue : leftTuple) {
+            //cout << leftValue << endl;
+            values.push_back(leftValue);
+        }
+
+        // Add all the values in the right tuple that aren't in the left tuple (no repeats allowed in this case)
+        for(auto & rightValue : rightTuple){
+
+            bool repeat = false;
+
+            for(auto & value : values){
+                if(value == rightValue){
+                    //cout << "false" << endl;
+                    repeat = true;
+                }
+            }
+
+            if(!repeat){
+                values.push_back(rightValue);
+            }
+
+        }
+
+        Tuple joinedTuple = Tuple(values);
+
+        return joinedTuple;
+    }
+
+    Scheme joinSchemes(const Scheme& leftScheme, const Scheme& rightScheme){
+        // Join two schemes
+        vector<string> newSchemeNames;
+
+        for(auto & name : leftScheme) {
+            newSchemeNames.push_back(name);
+        }
+
+
+        for(auto & name : rightScheme){
+            // Check for repeat names
+
+            bool repeat = false;
+
+            for(auto & schemeName : newSchemeNames) {
+                if(name == schemeName) {
+                    repeat = true;
+                }
+            }
+
+            if(!repeat){
+                newSchemeNames.push_back(name);
+            }
+
+        }
+
+        // Return new scheme with joined scheme names
+        return Scheme(newSchemeNames);
+    }
+
+    Relation join(Relation r) {
+
+        const Scheme& leftScheme = scheme;
+        const Scheme& rightScheme = r.scheme;
+        Scheme newScheme = joinSchemes(leftScheme, rightScheme);
+        for(auto & name : newScheme){
+            //cout << name << endl;
+        }
+        Relation newRelation = Relation("intermediateRelation", newScheme); // What should the name be?
+
+        for (const Tuple& leftTuple : tuples) {
+
+            for (const Tuple& rightTuple : r.tuples) {
+
+                // If tuples in scheme are joinable, make the tuples
+                if(joinable(leftScheme, rightScheme, leftTuple, rightTuple)){
+
+                    Tuple joinedTuple = joinTuples(leftTuple, rightTuple);
+
+                    newRelation.addTuple(joinedTuple);
+
+                }
+
+
+
+            }
+
+        }
+        //cout << newRelation.relationNameToString() << endl;
+        cout << newRelation.relationToString() << endl;
+        return newRelation;
+    }
+
+    static bool joinable(const Scheme& leftScheme, const Scheme& rightScheme,
+                         const Tuple& leftTuple, const Tuple& rightTuple) {
+
+        bool foundSameName = false;
+
+        // Loop over left scheme and tuple, print names and values of left scheme and tuple
+        for (unsigned leftIndex = 0; leftIndex < leftScheme.size(); leftIndex++) {
+            const string &leftName = leftScheme.at(leftIndex);
+            const string &leftValue = leftTuple.at(leftIndex);
+            //cout << "left name: " << leftName << " value: " << leftValue << endl;
+
+            // Loop over right scheme and tuple, print names and values of right scheme and tuple
+            for (unsigned rightIndex = 0; rightIndex < rightScheme.size(); rightIndex++) {
+                const string &rightName = rightScheme.at(rightIndex);
+                const string &rightValue = rightTuple.at(rightIndex);
+                //cout << "right name: " << rightName << " value: " << rightValue << endl;
+
+                // Check to see if the tuples are not a match (names are the same, but values are not equal).
+                if (leftName == rightName){
+                    foundSameName = true;
+
+                    if(leftValue != rightValue) {
+                        return false;
+                    }
+                }
+
+            }
+        }
+
+        // If none of the scheme names match, they are not joinable
+        if(!foundSameName) {
+            return false;
+        }
+
+        return true;
+    }
+
     void rename(vector<string> newNames) {
         Scheme newScheme = Scheme(newNames);
         scheme = newScheme;
@@ -54,6 +188,7 @@ public:
 
     string relationToString() const {
         stringstream out;
+
         for (auto& tuple : tuples) {
 
             out << "  " << tuple.schemeTupleToString(scheme) << endl;
@@ -110,6 +245,7 @@ public:
 
     Relation project(vector<int> indices) const {
 
+        // TODO: Re-order columns in the same order as the attributes in the rule or query
         Relation result(name, scheme);
         for (auto& tuple : tuples) {
             vector<string> newTupleVals;
