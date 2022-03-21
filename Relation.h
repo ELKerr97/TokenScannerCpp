@@ -29,10 +29,22 @@ private:
     string name;
     Scheme scheme;
     set<Tuple> tuples;
+    set<int> joinIndices;
+    set<Tuple> newTuples;
 
 public:
 
     Relation(const string& name, const Scheme& scheme) : name(name), scheme(scheme) { }
+
+    int getSize() {
+        return tuples.size();
+    }
+
+    void doUnion(Relation r){
+        for(auto & tuple : r.tuples){
+            tuples.insert(tuple);
+        }
+    }
 
     Tuple joinTuples(const Tuple& leftTuple, const Tuple& rightTuple){
         // Join two tuples
@@ -41,20 +53,34 @@ public:
 
         // Add all the values from the left tuple first
         for(auto & leftValue : leftTuple) {
-            //cout << leftValue << endl;
+
             values.push_back(leftValue);
         }
 
+
+        // Add rest of values in right tuple that correspond to the correct indices
+        for(auto & index : joinIndices){
+
+            values.push_back(rightTuple.at(index));
+
+        }
+
+
+/*
         // Add all the values in the right tuple that aren't in the left tuple (no repeats allowed in this case)
         for(auto & rightValue : rightTuple){
 
             bool repeat = false;
 
-            for(auto & value : values){
-                if(value == rightValue){
-                    //cout << "false" << endl;
-                    repeat = true;
-                }
+//            for(auto & value : values){
+//                if(value == rightValue){
+//
+//                    repeat = true;
+//                }
+//            }
+
+            if(rightValue == values.at(values.size() - 1)){
+                repeat = true;
             }
 
             if(!repeat){
@@ -62,9 +88,10 @@ public:
             }
 
         }
+        */
+
 
         Tuple joinedTuple = Tuple(values);
-
         return joinedTuple;
     }
 
@@ -73,8 +100,15 @@ public:
         vector<string> newSchemeNames;
 
         for(auto & name : leftScheme) {
+            //cout << name << endl;
             newSchemeNames.push_back(name);
         }
+/*
+        for(auto & index : joinIndices){
+            //cout << "yep" << rightScheme.at(index) << endl;
+            newSchemeNames.push_back(rightScheme.at(index));
+        }
+        */
 
 
         for(auto & name : rightScheme){
@@ -94,25 +128,59 @@ public:
 
         }
 
+
         // Return new scheme with joined scheme names
         return Scheme(newSchemeNames);
+    }
+
+    // Get different tuples
+    set<Tuple> diffTuples(Relation r) {
+        set<Tuple> diffTuples;
+
+        if(tuples.empty()){
+            for(auto & rightTuple : r.tuples){
+                diffTuples.insert(rightTuple);
+            }
+        } else {
+            for(auto & leftTuple : tuples){
+                for(auto & rightTuple : r.tuples){
+                    if(leftTuple != rightTuple ){
+
+                        bool repeat = false;
+                        for(auto & curTuple : tuples){
+                            if(curTuple == rightTuple){
+                                repeat = true;
+                            }
+                        }
+
+                        if(!repeat){
+                            //cout << tuple2.schemeTupleToString(r.scheme) << endl;
+                            diffTuples.insert(rightTuple);
+                        }
+                    }
+                }
+            }
+        }
+
+
+        return diffTuples;
     }
 
     Relation join(Relation r) {
 
         const Scheme& leftScheme = scheme;
         const Scheme& rightScheme = r.scheme;
+        setJoinIndices(leftScheme, rightScheme);
+
         Scheme newScheme = joinSchemes(leftScheme, rightScheme);
-        for(auto & name : newScheme){
-            //cout << name << endl;
-        }
-        Relation newRelation = Relation("intermediateRelation", newScheme); // What should the name be?
+
+        Relation newRelation = Relation("intermediateRelation", newScheme);
 
         for (const Tuple& leftTuple : tuples) {
 
             for (const Tuple& rightTuple : r.tuples) {
 
-                // If tuples in scheme are joinable, make the tuples
+                // If tuples in scheme are join-able, make the tuples
                 if(joinable(leftScheme, rightScheme, leftTuple, rightTuple)){
 
                     Tuple joinedTuple = joinTuples(leftTuple, rightTuple);
@@ -120,22 +188,45 @@ public:
                     newRelation.addTuple(joinedTuple);
 
                 }
-
-
-
             }
-
         }
+        joinIndices.clear();
         //cout << newRelation.relationNameToString() << endl;
-        cout << newRelation.relationToString() << endl;
+        //cout << newRelation.relationToString() << endl;
         return newRelation;
+    }
+
+    void setJoinIndices(const Scheme& leftScheme, const Scheme& rightScheme) {
+
+        // Find the indices from the right tuple to add to the left tuple.
+        for (unsigned leftIndex = 0; leftIndex < leftScheme.size(); leftIndex++) {
+            const string &leftName = leftScheme.at(leftIndex);
+
+            for (unsigned rightIndex = 0; rightIndex < rightScheme.size(); rightIndex++) {
+                const string &rightName = rightScheme.at(rightIndex);
+
+                // Add that index if the names are not the same.
+                if(leftName != rightName){
+                    bool isInLeft = false;
+                    for(auto & left : leftScheme){
+                        if(rightName == left){
+                            isInLeft = true;
+                        }
+                    }
+                    if(!isInLeft){
+                        //cout << rightIndex << endl;
+                        joinIndices.insert(rightIndex);
+                    }
+                }
+            }
+        }
     }
 
     static bool joinable(const Scheme& leftScheme, const Scheme& rightScheme,
                          const Tuple& leftTuple, const Tuple& rightTuple) {
 
         bool foundSameName = false;
-
+        bool joinable = false;
         // Loop over left scheme and tuple, print names and values of left scheme and tuple
         for (unsigned leftIndex = 0; leftIndex < leftScheme.size(); leftIndex++) {
             const string &leftName = leftScheme.at(leftIndex);
@@ -152,20 +243,24 @@ public:
                 if (leftName == rightName){
                     foundSameName = true;
 
-                    if(leftValue != rightValue) {
-                        return false;
+                    if(leftValue == rightValue) {
+                        joinable = true;
+
                     }
                 }
-
             }
         }
 
-        // If none of the scheme names match, they are not joinable
+        // If none of the scheme names match, they **are join-able
         if(!foundSameName) {
-            return false;
+            joinable = true;
         }
 
-        return true;
+        return joinable;
+    }
+
+    vector<string> getScheme() {
+        return scheme;
     }
 
     void rename(vector<string> newNames) {
@@ -254,9 +349,11 @@ public:
             }
             Tuple newTuple(newTupleVals);
             result.addTuple(newTuple);
+
         }
 
         return result;
+
     }
 
 };

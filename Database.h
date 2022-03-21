@@ -39,7 +39,8 @@ public:
         evaluateRules();
 
         // Evaluate Queries
-        //evaluateQueries();
+        cout << "\nQuery Evaluation" << endl;
+        evaluateQueries();
 
     }
 
@@ -110,23 +111,27 @@ public:
 
         // Will run until there are no changes
         bool changes = true;
+        int iterations = 0;
+
+        cout << "Rule Evaluation" << endl;
+
+        vector<Relation> ruleRelations;
 
         while (changes) {
+
+            // Keep track of how many iterations through the rules
+            iterations ++;
 
             // set to false at beginning of loop, will switch to true when a tuple is added to a relation
             changes = false;
 
             // Go through each rule
             for(auto & rule : datalogProgram.rules){
-
-                // Head predicate
-                //cout << rule.headPredicate.predToString() << endl;
-
+                cout << rule.ruleToString() << endl;
                 vector<Relation> rightSideRules;
 
                 // Evaluate the right side of the rule
                 for(auto & rightRule : rule.predicateList){
-
 
                     // Iterate through each Relation
                     for(auto & relation : relations){
@@ -138,35 +143,45 @@ public:
                             // All parameters will be variables, so no need to check for constants.
                             for(long unsigned int rParamIndex = 0; rParamIndex < rightRule.parameters.size() ; rParamIndex ++){
 
-                                bool repeatVar = false;
+                                // Is it a constant?
+                                if (rightRule.parameters[rParamIndex].isConstant()){
 
-                                // Check if the variable has already been accounted for in the rule
-                                for (auto &variable: variables) {
-                                    if (rightRule.parameters[rParamIndex].name ==
-                                        variable.getVariableName()) {
-                                        repeatVar = true;
+                                    // if constant, select tuples from relation that have same values
+                                    relation = relation.selectSingleIndex(rParamIndex, rightRule.parameters[rParamIndex].name);
+
+                                    // Is it a variable?
+                                } else {
+                                    bool repeatVar = false;
+
+                                    // Check if the variable has already been accounted for in the rule
+                                    for (auto &variable: variables) {
+                                        if (rightRule.parameters[rParamIndex].name ==
+                                            variable.getVariableName()) {
+                                            repeatVar = true;
+                                        }
+                                    }
+
+                                    // If first time variable shows up in rule, add new variable
+                                    if (!repeatVar) {
+
+                                        Variable newVariable = Variable(
+                                                rightRule.parameters[rParamIndex].name,
+                                                rightRule.repeatParameters(
+                                                        rightRule.parameters[rParamIndex].name));
+
+                                        // Add new variable to variables to be used when projecting the relation
+                                        variables.push_back(newVariable);
+
+                                        // Make sure there are variables to add to relation
+                                        if(!newVariable.indices.empty()) {
+
+                                            // Create the new relation with
+                                            relation = relation.selectMultipleIndexes(newVariable.indices);
+                                        }
+
                                     }
                                 }
 
-                                // If first time variable shows up in rule, add new variable
-                                if (!repeatVar) {
-
-                                    Variable newVariable = Variable(
-                                            rightRule.parameters[rParamIndex].name,
-                                            rightRule.repeatParameters(
-                                                    rightRule.parameters[rParamIndex].name));
-
-                                    // Add new variable to variables to be used when projecting the relation
-                                    variables.push_back(newVariable);
-
-                                    // Make sure there are variables to add to relation
-                                    if(!newVariable.indices.empty()) {
-
-                                        // Create the new relation with
-                                        relation = relation.selectMultipleIndexes(newVariable.indices);
-                                    }
-
-                                }
                             }
 
                             // Rename
@@ -200,15 +215,14 @@ public:
 
                 // Join Rules
 
+                // Start with the first relation
+                Relation singleRelation = rightSideRules[0];
+
                 // If two or more predicates on right-hand side, join intermediate results
                 if(rightSideRules.size() > 1) {
 
-                    // Start with the first relation
-                    Relation singleRelation = rightSideRules[0];
-
                     // Iterate through each right-hand side rule
                     for(unsigned int i = 0; i < rightSideRules.size()-1; i ++){
-
                         // Join each relation together
                         singleRelation = singleRelation.join(rightSideRules[i + 1]);
 
@@ -219,15 +233,94 @@ public:
                 }
 
                 // Project Rules
+                // Get columns for the project
+                vector<int> ruleProjectIndices;
+                for(auto & headVariable : rule.headPredicate.parameters){
+                    int index = 0;
+
+                    // Iterate through each scheme variable
+                    for(auto & variable : singleRelation.getScheme()){
+                        // If a match, we know an index for the project.
+                        if(headVariable.name == variable){
+                            ruleProjectIndices.push_back(index);
+
+                            // If not, keep looking.
+                        } else {
+                            index ++;
+
+                        }
+                    }
+
+                }
+
+                //cout << singleRelation.relationToString() << endl;
+
+                Relation projectedRelation = singleRelation.project(ruleProjectIndices);
+
+                //cout << projectedRelation.relationToString() << endl;
+
 
                 // Rename Rules
+                vector<string> newSchemeNames;
+                for(auto & scheme : datalogProgram.schemes){
+
+                    if(rule.headPredicate.name == scheme.name){
+                        for(auto & name : scheme.parameters){
+                            newSchemeNames.push_back(name.printName());
+                        }
+                    }
+                }
+
+                projectedRelation.rename(newSchemeNames);
+
+                //ruleRelations.push_back(projectedRelation);
+
+                set<Tuple> newTuples;
 
                 // Union
+                // Find relation in database whose name matches the name of the head of the rule
+                for(auto & relation : relations){
+                    int beforeRelSize = relation.getSize();
+
+                    // Match head rule name with relation name
+                    if(rule.headPredicate.name == relation.relationNameToString()){
+
+                        newTuples = relation.diffTuples(projectedRelation);
+
+                        // Add the tuples from the projected relation
+                        relation.doUnion(projectedRelation);
+
+                    }
+
+                    int afterRelSize = relation.getSize();
+                    //cout << relation.relationToString() << endl;
+                    // If at least one tuple was added, changes is true
+                    if(beforeRelSize != afterRelSize){
+                        changes = true;
+                        for(auto & tuple : newTuples){
+                            cout << "  " <<  tuple.schemeTupleToString(projectedRelation.getScheme()) << endl;
+                        }
+                        //cout << projectedRelation.relationToString();
+                        // Reset for next iteration
+                        ruleRelations.clear();
+                    }
+                }
 
                 // Reset for next rule
                 rightSideRules.clear();
             }
         }
+
+        /*
+        int printIndex = 0;
+        for(auto & rule : datalogProgram.rules){
+            cout << rule.ruleToString() << endl;
+            cout << ruleRelations[printIndex].relationToString();
+            printIndex ++;
+        }
+         */
+
+        cout << "\nSchemes populated after " << iterations << " passes through the Rules." << endl;
     }
 
     void evaluateQueries() {
