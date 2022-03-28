@@ -135,7 +135,7 @@ public:
 
                     // Iterate through each Relation
                     for(auto & relation : relations){
-
+                        Relation newRelation = relation;
                         // Check if rule and relation match
                         if(rightRule.name == relation.relationNameToString()){
 
@@ -147,7 +147,7 @@ public:
                                 if (rightRule.parameters[rParamIndex].isConstant()){
 
                                     // if constant, select tuples from relation that have same values
-                                    relation = relation.selectSingleIndex(rParamIndex, rightRule.parameters[rParamIndex].name);
+                                    newRelation = newRelation.selectSingleIndex(rParamIndex, rightRule.parameters[rParamIndex].name);
 
                                     // Is it a variable?
                                 } else {
@@ -176,7 +176,7 @@ public:
                                         if(!newVariable.indices.empty()) {
 
                                             // Create the new relation with
-                                            relation = relation.selectMultipleIndexes(newVariable.indices);
+                                            newRelation = newRelation.selectMultipleIndexes(newVariable.indices);
                                         }
 
                                     }
@@ -190,7 +190,7 @@ public:
                                 newSchemeNames.push_back(variable.name);
                             }
 
-                            relation.rename(newSchemeNames);
+                            newRelation.rename(newSchemeNames);
 
                             // Project
                             vector<int> projectIndices;
@@ -201,7 +201,7 @@ public:
                                 projectIndices.push_back(variable.indices[0]);
 
                             }
-                            Relation projectedRelation = relation.project(projectIndices);
+                            Relation projectedRelation = newRelation.project(projectIndices);
                             //cout << projectedRelation.relationToString();
                             projectIndices.clear();
 

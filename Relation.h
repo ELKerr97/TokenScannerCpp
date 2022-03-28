@@ -246,6 +246,8 @@ public:
                     if(leftValue == rightValue) {
                         joinable = true;
 
+                    } else {
+                        return false;
                     }
                 }
             }
