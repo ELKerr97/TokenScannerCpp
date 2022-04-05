@@ -8,6 +8,8 @@
 #include "Relation.h"
 #include "Database.h"
 #include "Node.h"
+#include "Graph.h"
+#include "Rule.h"
 #include <vector>
 #include <string>
 
@@ -22,11 +24,46 @@ int main(int argc, char** argv) {
     os << file.rdbuf();
     string fileString = os.str();
 
-    // Lab 5
-    Node node;
-    node.addEdge(4);
-    node.addEdge(8);
-    node.addEdge(2);
-    cout << node.toString() << endl;
+
+    /*
+    vector<Rule> rules;
+
+    for (auto& rulePair : ruleNames) {
+        string headName = rulePair.first;
+        Predicate headPredicate = Predicate(headName);
+        Rule rule = Rule(headPredicate);
+        vector<string> bodyNames = rulePair.second;
+        for (auto& bodyName : bodyNames)
+            rule.addPredicate(Predicate(bodyName));
+        rules.push_back(rule);
+    }
+     */
+
+    // Create Scanner object
+    Scanner s = Scanner(fileString);
+
+    // Return a vector (array) of Token objects
+    vector<Token> t = s.Run();
+
+    Parser p = Parser(t);
+
+    // Create datalogProgram object
+    DatalogProgram datalogProgram = p.Run();
+
+    //Database database = Database(datalogProgram);
+
+    //database.createDatabase();
+    Graph graph = datalogProgram.makeGraph(datalogProgram.rules);
+    Graph reverseGraph = datalogProgram.makeReverseGraph(datalogProgram.rules);
+
+    // Start at the first node
+    // datalogProgram.dfs(0, reverseGraph);
+    // datalogProgram.dfs(2, reverseGraph);
+
+    datalogProgram.run();
+
+
+    //cout << "Reverse Graph: \n" << reverseGraph.toString();
+
 
 }

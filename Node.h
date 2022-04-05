@@ -15,11 +15,9 @@ class Node {
 
 private:
 
-    set<int> adjacentNodeIDs;
-    int postOrderNumber;
-    bool visited;
-
 public:
+    set<int> adjacentNodeIDs;
+    bool visited;
 
     /**
      * Add an edge from current node to an adjacent node

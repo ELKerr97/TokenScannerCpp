@@ -36,7 +36,6 @@ public:
         addTuplesToRelations();
 
         // Evaluate Rules
-        evaluateRules();
 
         // Evaluate Queries
         cout << "\nQuery Evaluation" << endl;
@@ -107,13 +106,12 @@ public:
      * evaluateRules() evaluates rules in database.
      * This is repeated until there are no changes to the tuples in the relations.
      */
-    void evaluateRules() {
+     // TODO: Take a vector of rules as an argument.
+    void evaluateRules(set<Rule> rulesToEvaluate) {
 
         // Will run until there are no changes
         bool changes = true;
         int iterations = 0;
-
-        cout << "Rule Evaluation" << endl;
 
         vector<Relation> ruleRelations;
 
@@ -125,8 +123,12 @@ public:
             // set to false at beginning of loop, will switch to true when a tuple is added to a relation
             changes = false;
 
-            // Go through each rule
-            for(auto & rule : datalogProgram.rules){
+            // Iterator to go through the set of rules
+            set<Rule>::iterator itr;
+
+            // Go through each rule in set of rules
+            for(itr = rulesToEvaluate.begin(); itr != rulesToEvaluate.end(); itr ++){
+                Rule rule = *itr;
                 cout << rule.ruleToString() << endl;
                 vector<Relation> rightSideRules;
 
@@ -320,7 +322,7 @@ public:
         }
          */
 
-        cout << "\nSchemes populated after " << iterations << " passes through the Rules." << endl;
+        cout <<  iterations << " passes: ";
     }
 
     void evaluateQueries() {

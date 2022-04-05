@@ -7,9 +7,13 @@
 
 #include "Predicate.h"
 #include "Rule.h"
+#include "Graph.h"
+#include "Node.h"
 #include <vector>
 #include <string>
 #include <set>
+#include <stack>
+#include <bits/stdc++.h>
 
 
 using namespace std;
@@ -17,42 +21,226 @@ using namespace std;
 class DatalogProgram {
 
 private:
-    // vector of predicates called schemes
-    // vector of predicates called facts
-    // vector of rules called rules
-    // vector of predicates called queries
-    // toString function that prints them all out
+    set<int> scc; // Strongly Connected Components
+    set<int> forestNodes; // Nodes set in reverse post-order
+
 
 public:
-    // Vectors
     vector<Predicate> schemes;
     vector<Predicate> facts;
     vector<Rule> rules;
     vector<Predicate> queries;
     set<string> domains;
-
+    Graph dependencyGraph = Graph(0);
+    Graph reverseGraph = Graph(0);
 
     // Methods
     DatalogProgram() {}
+
+    /**
+     * Creates a reverse graph, gets all the nodes in order, finds SCC's and evaluated rules in order.
+     */
+    void run() {
+
+        // Make a reverse dependency graph from the rules
+        reverseGraph = makeReverseGraph(rules);
+
+        // Put all the nodes in the correct order
+        for(int i = 0; i < rules.size(); i ++){
+
+            // Iterate through each node and do a depth-first search. ***Initially in reverse post-order
+            // (highest number will be at the beginning)
+            dfsForest(i);
+        }
+
+        dependencyGraph = makeGraph(rules);
+
+        set<int>::reverse_iterator rit;
+
+        // Print Dependency Graph
+        cout << "Dependency Graph\n" << dependencyGraph.toString() << endl;
+
+        // Print Rule Evaluation
+        cout << "Rule Evaluation" << endl;
+
+        // Run dfs on the original dependency graph, starting with the node with the highest post-order number.
+        for(rit = forestNodes.rbegin(); rit != forestNodes.crend(); rit ++) {
+
+            cout << "SCC: R" << *rit << endl;
+            // Reset the SCC's after each iteration
+            scc.clear();
+
+            // depth-first search
+            dfs(*rit);
+
+            // Evaluate rules in SCC's in numerical order (should be in order because they're in a set)
+            set<Rule> rulesInSCC;
+
+             // Put rules in SCC into a set
+            for(auto & index : scc){
+
+                rulesInSCC.insert(rules[index]);
+
+            }
+
+        }
+
+    }
+
+    /**
+     * Depth-First Search will identify Strongly Connected Components and add them to scc to be evaluated after all
+     * returns are finished.
+     * @param nodeX
+     * @param graph
+     */
+    void dfs(int nodeX){
+
+        // Mark this node as visited and add it to SCC's if it hasn't been visited
+        if (!dependencyGraph.nodes[nodeX].visited) {
+            //cout << nodeX << " marked as visited" << endl;
+            scc.insert(nodeX);
+            dependencyGraph.nodes[nodeX].visited = true;
+        }
+
+        // iterate through each adjacent node
+        for(auto & nodeY : dependencyGraph.nodes[nodeX].adjacentNodeIDs){
+
+            // Check if that node has been visited
+            if(!dependencyGraph.nodes[nodeY].visited) {
+                // cout << nodeY << endl;
+                // If not visited, add it as an SCC and run dfs on that node
+                scc.insert(nodeY);
+                dfs(nodeY);
+
+            }
+        }
+    }
+
+    /**
+     * Finds the reverse-post-order for the nodes and stores it in forestNodes
+     * @param nodeX
+     * @param graph
+     */
+    void dfsForest(int nodeX) {
+
+        // Mark this node as visited
+        reverseGraph.nodes[nodeX].visited = true;
+
+        // iterate through each adjacent node
+        for(auto & nodeY : reverseGraph.nodes[nodeX].adjacentNodeIDs){
+
+            // Check if that node has been visited
+            if(!reverseGraph.nodes[nodeY].visited) {
+
+                // If not visited, run dfs on that node
+                dfsForest(nodeY);
+
+            }
+
+        }
+        // On return, add the node. This will be in reverse post-order.
+        forestNodes.insert(nodeX);
+
+/*
+        // TEST: Print statements to ensure correct order
+        for(auto & id : forestNodes) {
+
+            cout << id << ",";
+
+        }
+        cout << "\n";
+*/
+
+    }
+
+    static Graph makeReverseGraph(const vector<Rule>& rules){
+
+        // Make a graph of rules (rules are the nodes)
+        Graph graph(rules.size());
+
+        // Loop over the rules and find the dependencies. 'fromID' maps the correct node index in graph.
+        for (unsigned fromID = 0; fromID < rules.size(); fromID++) {
+            Rule fromRule = rules.at(fromID);
+
+            // Use backspace to get rid of period at the end
+            //cout << "from rule R" << fromID << ": " << fromRule.ruleToString() << "\b \b" << endl;
+
+            // Loop over the predicates of the body of the current rule
+            for (unsigned pred = 0; pred < fromRule.predicateList.size(); pred++) {
+                // Body rule
+                Predicate bodyPred = fromRule.predicateList[pred];
+                //cout << "from body predicate: " << bodyPred.predToString() << endl;
+
+
+                for (unsigned toID = 0; toID < rules.size(); toID++) {
+                    Rule toRule = rules.at(toID);
+                    //cout << "to rule R" << toID << ": " << toRule.ruleToString() << endl;
+
+                    // If the name of a rule in the body matches the name of the head rule, they are a match.
+                    // **Head rule will be dependent on the body rule
+                    if(toRule.headPredicate.name == bodyPred.name){
+                        //cout << "dependency found: (R" << fromID << ",R" << toID << ")" << endl;
+
+                        // Add an edge from the head rule to the body rule
+                        graph.nodes[toID].addEdge(fromID);
+                    }
+                }
+            }
+        }
+
+        return graph;
+
+    }
+
+    static Graph makeGraph(const vector<Rule>& rules){
+
+        // Make a graph of rules (rules are the nodes)
+        Graph graph(rules.size());
+
+        // Loop over the rules and find the dependencies. 'fromID' maps the correct node index in graph.
+        for (unsigned fromID = 0; fromID < rules.size(); fromID++) {
+            Rule fromRule = rules.at(fromID);
+
+            // Loop over the predicates of the body of the current rule
+            for (unsigned pred = 0; pred < fromRule.predicateList.size(); pred++) {
+                // Body rule
+                Predicate bodyPred = fromRule.predicateList[pred];
+
+                for (unsigned toID = 0; toID < rules.size(); toID++) {
+                    Rule toRule = rules.at(toID);
+
+                    // If the name of a rule in the body matches the name of the head rule, they are a match.
+                    // **Head rule will be dependent on the body rule
+                    if(toRule.headPredicate.name == bodyPred.name){
+
+                        // Add an edge from the head rule to the body rule
+                        graph.nodes[fromID].addEdge(toID);
+                    }
+                }
+            }
+        }
+
+        return graph;
+
+    }
 
     string printDatalog() {
         string datalog;
 
         datalog += "Success!\n";
-        datalog +=printSchemes();
-        datalog +=printFacts();
-        datalog +=printRules();
-        datalog +=printQueries();
+        datalog += printSchemes();
+        datalog += printFacts();
+        datalog += printRules();
+        datalog += printQueries();
         datalog += printDomains();
 
         return datalog;
     }
 
-
-    // TODO : add schemes, facts, rules and queries to the vectors in datalog
     void addScheme(const Predicate& scheme){
         schemes.push_back(scheme);
     }
+
     void addFact(const Predicate& fact){
         facts.push_back(fact);
     }
