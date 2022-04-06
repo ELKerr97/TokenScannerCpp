@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
     // Create datalogProgram object
     DatalogProgram datalogProgram = p.Run();
 
-    //Database database = Database(datalogProgram);
+    Database database = Database(datalogProgram);
 
     //database.createDatabase();
     Graph graph = datalogProgram.makeGraph(datalogProgram.rules);
@@ -59,11 +59,10 @@ int main(int argc, char** argv) {
     // Start at the first node
     // datalogProgram.dfs(0, reverseGraph);
     // datalogProgram.dfs(2, reverseGraph);
-
-    datalogProgram.run();
-
-
     //cout << "Reverse Graph: \n" << reverseGraph.toString();
+    database.createDatabase();
+
+
 
 
 }

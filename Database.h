@@ -12,6 +12,8 @@
 #include "Scheme.h"
 #include "Tuple.h"
 #include "Variable.h"
+#include "Graph.h"
+#include <set>
 
 using namespace std;
 
@@ -22,6 +24,8 @@ private:
     DatalogProgram datalogProgram;
     vector<Relation> relations;
     vector<Variable> variables;
+    Graph dependencyGraph = Graph(0);
+    Graph reverseGraph = Graph(0);
 
 public:
 
@@ -36,10 +40,81 @@ public:
         addTuplesToRelations();
 
         // Evaluate Rules
+        evaluateComponents();
 
         // Evaluate Queries
         cout << "\nQuery Evaluation" << endl;
         evaluateQueries();
+
+    }
+
+    void evaluateComponents() {
+
+        // Make a reverse dependency graph from the rules
+        reverseGraph = datalogProgram.makeReverseGraph(datalogProgram.rules);
+
+        // Put all the nodes in the correct order
+        for(long unsigned int i = 0; i < datalogProgram.rules.size(); i ++){
+
+            // Iterate through each node and do a depth-first search. ***Initially in reverse post-order
+            // (highest number will be at the beginning)
+            datalogProgram.dfsForest(i, reverseGraph);
+        }
+
+        dependencyGraph = datalogProgram.makeGraph(datalogProgram.rules);
+
+        // Print Dependency Graph
+        cout << "Dependency Graph\n" << dependencyGraph.toString() << endl;
+
+        // Print Rule Evaluation
+        cout << "Rule Evaluation" << endl;
+
+        vector<int>::reverse_iterator rit;
+        // Run dfs on the original dependency graph, starting with the node with the highest post-order number.
+        for(rit = datalogProgram.forestNodes.rbegin(); rit != datalogProgram.forestNodes.rend(); rit ++) {
+
+            // Reset the SCC's after each iteration
+            datalogProgram.scc.clear();
+
+            // depth-first search
+            datalogProgram.dfs(*rit, dependencyGraph);
+
+            set<int>::iterator itr1;
+
+            // Check if there are Components to evaluate
+            if(!datalogProgram.scc.empty()) {
+                cout << "SCC: ";
+                long unsigned int counter = 0;
+                for (itr1 = datalogProgram.scc.begin(); itr1 != datalogProgram.scc.end(); itr1++) {
+
+                    counter ++;
+                    if(counter == datalogProgram.scc.size()){
+                        cout << "R" << *itr1;
+                    } else {
+                        cout << "R" << *itr1 << ",";
+                    }
+
+                }
+                cout << endl;
+
+
+                // Evaluate rules in SCC's in numerical order (should be in order because they're in a set)
+                vector<int> rulesInSCC;
+
+                set<int>::iterator itr; // Using reverse iterator to make sure rules are evaluated in right order
+                // Put rules in SCC into a set
+                for (itr = datalogProgram.scc.begin(); itr != datalogProgram.scc.end(); itr++) {
+
+                    rulesInSCC.push_back(*itr);
+
+                }
+
+                evaluateRules(rulesInSCC);
+
+                // Clear the rules
+                rulesInSCC.clear();
+            }
+        }
 
     }
 
@@ -106,8 +181,7 @@ public:
      * evaluateRules() evaluates rules in database.
      * This is repeated until there are no changes to the tuples in the relations.
      */
-     // TODO: Take a vector of rules as an argument.
-    void evaluateRules(set<Rule> rulesToEvaluate) {
+    void evaluateRules(vector<int> ruleIndices) {
 
         // Will run until there are no changes
         bool changes = true;
@@ -122,13 +196,11 @@ public:
 
             // set to false at beginning of loop, will switch to true when a tuple is added to a relation
             changes = false;
+            int numChanges = 0;
 
-            // Iterator to go through the set of rules
-            set<Rule>::iterator itr;
-
-            // Go through each rule in set of rules
-            for(itr = rulesToEvaluate.begin(); itr != rulesToEvaluate.end(); itr ++){
-                Rule rule = *itr;
+            // Go through each rule in vector of rules
+            for(auto & index : ruleIndices){
+                Rule rule = datalogProgram.rules.at(index);
                 cout << rule.ruleToString() << endl;
                 vector<Relation> rightSideRules;
 
@@ -295,17 +367,90 @@ public:
                     }
 
                     int afterRelSize = relation.getSize();
-                    //cout << relation.relationToString() << endl;
+
                     // If at least one tuple was added, changes is true
                     if(beforeRelSize != afterRelSize){
-                        changes = true;
+
+                        // If a rule has no adjacent nodes, evaluate only once.
+                        if(dependencyGraph.nodes.at(index).adjacentNodeIDs.empty()){
+                            changes = false;
+
+                            // If an SCC contains only one rule and that rule does not depend on itself,
+                            // evaluate only once.
+                        } else if(dependencyGraph.nodes.at(index).adjacentNodeIDs.size() >= 1) {
+
+                            // Set initially to false
+                            changes = false;
+                            // Check the adjacent nodes to see if the rule depends on itself
+                            vector<int> possibleCycles;
+
+                            // Iterate through each rule in the SCC
+                            for(auto & ruleIndex : ruleIndices){
+
+                                // Insert possible cycle
+                                possibleCycles.push_back(ruleIndex);
+
+                                // Iterate through each adjacent node for the node in SCC
+                                for(auto & adjacentNode : dependencyGraph.nodes.at(ruleIndex).adjacentNodeIDs) {
+
+                                    // Check if the adjacent node traces back to a previous node in SCC
+                                    for(auto & possibleCycle : possibleCycles){
+
+                                        // If it does, we have a cycle
+                                        if(possibleCycle == adjacentNode){
+
+                                            changes += 1;
+
+                                        }
+                                    }
+
+                                }
+
+                            }
+
+                            for(auto & adjacentNode : dependencyGraph.nodes.at(index).adjacentNodeIDs) {
+                                // If the rule does depend on itself, evaluate again. If not, it stays false
+                                if(adjacentNode == index) {
+
+                                    numChanges += 1;
+                                }
+
+                                // Check for a cycle. This only works for two adjacent nodes.
+                                for(auto & backAdjNode : dependencyGraph.nodes.at(adjacentNode).adjacentNodeIDs){
+
+                                    if(backAdjNode == index){
+
+                                        numChanges += 1;
+
+                                    }
+
+                                }
+
+                            }
+
+                            // If an SCC has more than one rule, evaluate again
+                        } else {
+
+                            //cout << "repeat\n";
+                            numChanges += 1;
+
+                        }
+
+                        // If any changes have been made to any of the rules, evaluate them again
+                        if(numChanges != 0){
+                            changes = true;
+                        }
+
+                        // Print the tuples
                         for(auto & tuple : newTuples){
                             cout << "  " <<  tuple.schemeTupleToString(projectedRelation.getScheme()) << endl;
                         }
-                        //cout << projectedRelation.relationToString();
+
                         // Reset for next iteration
                         ruleRelations.clear();
                     }
+
+
                 }
 
                 // Reset for next rule
@@ -313,16 +458,21 @@ public:
             }
         }
 
-        /*
-        int printIndex = 0;
-        for(auto & rule : datalogProgram.rules){
-            cout << rule.ruleToString() << endl;
-            cout << ruleRelations[printIndex].relationToString();
-            printIndex ++;
-        }
-         */
-
+        vector<int>::iterator ruleIt;
         cout <<  iterations << " passes: ";
+        long unsigned int counter = 0;
+        for(ruleIt = ruleIndices.begin(); ruleIt != ruleIndices.end(); ruleIt ++){
+
+            counter ++;
+            if(counter == ruleIndices.size()){
+                cout << "R" << *ruleIt;
+            } else {
+                cout << "R" << *ruleIt << ",";
+            }
+
+        }
+        ruleIndices.clear();
+        cout << endl;
     }
 
     void evaluateQueries() {

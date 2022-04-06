@@ -15,24 +15,22 @@
 #include <stack>
 #include <bits/stdc++.h>
 
-
 using namespace std;
 
 class DatalogProgram {
 
 private:
-    set<int> scc; // Strongly Connected Components
-    set<int> forestNodes; // Nodes set in reverse post-order
-
+    //Graph dependencyGraph = Graph(0);
+    //Graph reverseGraph = Graph(0);
 
 public:
+    set<int> scc; // Strongly Connected Components
+    vector<int> forestNodes; // Nodes set in reverse post-order
     vector<Predicate> schemes;
     vector<Predicate> facts;
     vector<Rule> rules;
     vector<Predicate> queries;
     set<string> domains;
-    Graph dependencyGraph = Graph(0);
-    Graph reverseGraph = Graph(0);
 
     // Methods
     DatalogProgram() {}
@@ -40,6 +38,7 @@ public:
     /**
      * Creates a reverse graph, gets all the nodes in order, finds SCC's and evaluated rules in order.
      */
+     /*
     void run() {
 
         // Make a reverse dependency graph from the rules
@@ -74,18 +73,22 @@ public:
             dfs(*rit);
 
             // Evaluate rules in SCC's in numerical order (should be in order because they're in a set)
-            set<Rule> rulesInSCC;
+            vector<Rule> rulesInSCC;
 
+            set<int>::reverse_iterator itr; // Using reverse iterator to make sure rules are evaluated in right order
              // Put rules in SCC into a set
-            for(auto & index : scc){
+            for(itr = scc.rbegin(); itr != scc.rend(); itr++){
 
-                rulesInSCC.insert(rules[index]);
+                rulesInSCC.push_back(rules.at(*itr));
 
             }
 
+            // Clear the rules
+            rulesInSCC.clear();
         }
 
     }
+      */
 
     /**
      * Depth-First Search will identify Strongly Connected Components and add them to scc to be evaluated after all
@@ -93,24 +96,21 @@ public:
      * @param nodeX
      * @param graph
      */
-    void dfs(int nodeX){
+    void dfs(unsigned int nodeX, Graph& dependencyGraph){
 
         // Mark this node as visited and add it to SCC's if it hasn't been visited
         if (!dependencyGraph.nodes[nodeX].visited) {
-            //cout << nodeX << " marked as visited" << endl;
             scc.insert(nodeX);
             dependencyGraph.nodes[nodeX].visited = true;
         }
 
         // iterate through each adjacent node
         for(auto & nodeY : dependencyGraph.nodes[nodeX].adjacentNodeIDs){
-
             // Check if that node has been visited
-            if(!dependencyGraph.nodes[nodeY].visited) {
-                // cout << nodeY << endl;
+            if(!dependencyGraph.nodes[nodeY].visited && !dependencyGraph.nodes[nodeY].adjacentNodeIDs.empty()) {
                 // If not visited, add it as an SCC and run dfs on that node
                 scc.insert(nodeY);
-                dfs(nodeY);
+                dfs(nodeY, dependencyGraph);
 
             }
         }
@@ -121,10 +121,11 @@ public:
      * @param nodeX
      * @param graph
      */
-    void dfsForest(int nodeX) {
+    void dfsForest(int nodeX, Graph& reverseGraph) {
 
         // Mark this node as visited
         reverseGraph.nodes[nodeX].visited = true;
+
 
         // iterate through each adjacent node
         for(auto & nodeY : reverseGraph.nodes[nodeX].adjacentNodeIDs){
@@ -133,13 +134,25 @@ public:
             if(!reverseGraph.nodes[nodeY].visited) {
 
                 // If not visited, run dfs on that node
-                dfsForest(nodeY);
+
+                dfsForest(nodeY, reverseGraph);
 
             }
 
         }
+
+            // Check if node has been inserted yet
+        bool insert = true;
+        for(auto & nodeNum : forestNodes){
+            if(nodeNum == nodeX){
+                insert = false;
+            }
+        }
+        if(insert){
+            forestNodes.push_back(nodeX);
+        }
         // On return, add the node. This will be in reverse post-order.
-        forestNodes.insert(nodeX);
+
 
 /*
         // TEST: Print statements to ensure correct order

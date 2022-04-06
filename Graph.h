@@ -48,7 +48,7 @@ public:
      */
     string toString() {
         stringstream graph;
-        for(int i = 0; i < nodes.size() ; i ++){
+        for(long unsigned int i = 0; i < nodes.size() ; i ++){
 
             graph << "R" << i << ":" << nodes[i].toString() << endl;
 

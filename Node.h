@@ -32,7 +32,7 @@ public:
      */
     string toString() {
         stringstream printedNodes;
-        int count = 0;
+        long unsigned int count = 0;
         for(auto& nodeID : adjacentNodeIDs){
             count ++;
 
